@@ -1,0 +1,566 @@
+---
+tiTCe: "Assignment 1"
+author: "Fengwei Chen"
+date: "2021/8/29"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library("ggplot2")
+library("reshape2")
+library("pracma")
+library("R.matlab")
+library("MASS")
+library("plot.matrix")
+library(corrplot)
+library(ggcorrplot)
+```
+
+### Initial settings
+```{r}
+V = 441
+N = 240
+x1 = 21
+x2 = 21
+nsrcs = 6
+```
+
+## Q1 1
+## Standardization
+```{r}
+TC_1_initial = rep(c(rep(1,15),rep(-1,15)),8)
+TC_1 = (TC_1_initial - mean(TC_1_initial))/sd(TC_1_initial)
+
+TC_2_initial = rep(c(rep(0,20),rep(1,25)),7)[1:240]
+TC_2 = (TC_2_initial - mean(TC_2_initial))/sd(TC_2_initial)
+
+TC_3_initial = rep(c(rep(1,25),rep(0,35)),4)
+TC_3 = (TC_3_initial - mean(TC_3_initial))/sd(TC_3_initial)
+
+TC_4_initial = rep(c(rep(1,15),rep(0,25)),6)
+TC_4 = (TC_4_initial - mean(TC_4_initial))/sd(TC_4_initial)
+
+TC_5_initial = rep(c(rep(1,20),rep(0,20)),6)
+TC_5 = (TC_5_initial - mean(TC_5_initial))/sd(TC_5_initial)
+
+TC_6_initial = rep(c(rep(1,25),rep(0,15)),6)
+TC_6 = (TC_6_initial - mean(TC_6_initial))/sd(TC_6_initial)
+```
+
+```{r}
+par(mfrow = c(3,2))
+plot(TC_1, typ = "l", xlab = "", main = "Standardization")
+plot(TC_2, typ = "l", xlab = "", main = "Standardization")
+plot(TC_3, typ = "l", xlab = "", main = "Standardization")
+plot(TC_4, typ = "l", xlab = "", main = "Standardization")
+plot(TC_5, typ = "l", xlab = "", main = "Standardization")
+plot(TC_6, typ = "l", xlab = "", main = "Standardization")
+```
+
+### Compare the mean and variance of initial data
+```{r}
+mean(TC_1_initial)
+sd(TC_1_initial)
+
+mean(TC_2_initial)
+sd(TC_2_initial)
+
+mean(TC_3_initial)
+sd(TC_3_initial)
+
+mean(TC_4_initial)
+sd(TC_4_initial)
+
+mean(TC_5_initial)
+sd(TC_5_initial)
+
+mean(TC_6_initial)
+sd(TC_6_initial)
+```
+
+
+### L2 Normalization is defined as the square root of the sum of the squares of the values in each dimension. The normalization does not vary as much comparing to the initial data
+```{r}
+TC_1_nor = TC_1_initial / sqrt(sum(TC_1_initial^2))
+
+TC_2_nor = TC_2_initial / sqrt(sum(TC_2_initial^2))
+
+TC_3_nor = TC_3_initial / sqrt(sum(TC_3_initial^2))
+
+TC_4_nor = TC_4_initial / sqrt(sum(TC_4_initial^2))
+
+TC_5_nor = TC_5_initial / sqrt(sum(TC_5_initial^2))
+
+TC_6_nor = TC_6_initial / sqrt(sum(TC_6_initial^2))
+
+
+par(mfrow = c(3,2))
+plot(TC_1_nor, typ = "l", xlab= "", main = "Normalization")
+plot(TC_2_nor, typ = "l", xlab= "", main = "Normalization")
+plot(TC_3_nor, typ = "l", xlab= "", main = "Normalization")
+plot(TC_4_nor, typ = "l", xlab= "", main = "Normalization")
+plot(TC_5_nor, typ = "l", xlab= "", main = "Normalization")
+plot(TC_6_nor, typ = "l", xlab= "", main = "Normalization")
+
+```
+```{r}
+sqrt(sum(TC_1_initial^2))
+sqrt(sum(TC_2_initial^2))
+sqrt(sum(TC_3_initial^2))
+sqrt(sum(TC_4_initial^2))
+sqrt(sum(TC_5_initial^2))
+sqrt(sum(TC_6_initial^2))
+
+```
+
+```{r}
+par(mfrow = c(2,1))
+plot(TC_1_initial, typ = "l")
+plot(TC_1_nor, typ = "l")
+```
+
+```{r}
+par(mfrow = c(2,1))
+
+plot(TC_2_initial, typ = "l")
+plot(TC_2, typ = "l")
+```
+
+## TC3, TC4, TC5 seems to be correlated
+
+## Q1 2
+```{r}
+TC = data.frame(TC_1,TC_2,TC_3,TC_4,TC_5,TC_6)
+
+cor(TC)
+
+plot(cor(TC),xlab = "", ylab = "")
+```
+
+## Q1 3
+``` {r}
+tmpSM = array(0,c(nsrcs,x1,x2))
+tmpSM[1,2:6,2:6] = 1
+tmpSM[2,2:6,15:19] = 1
+tmpSM[3,8:13,2:6] = 1
+tmpSM[4,8:13,15:19] = 1
+tmpSM[5,15:19,2:6] = 1
+tmpSM[6,15:19,15:19] = 1
+
+par(mfrow = c(2,3))
+
+for (i in 1:nsrcs) {
+plot(tmpSM[i,,], border = NA, xlab = "", ylab = "", main = "")
+}
+
+```
+
+
+Independent
+``` {r}
+SM = matrix(c(c(tmpSM[1,,]), 
+            c(tmpSM[2,,]), 
+            c(tmpSM[3,,]), 
+            c(tmpSM[4,,]), 
+            c(tmpSM[5,,]),
+            c(tmpSM[6,,])),nsrcs,x1 * x2,byrow = T)
+plot(cor(t(SM)),border = NA, xlab = "SMs", ylab = "SMs", main = "")
+```
+
+Generate noisy data, cause the data does not have randomness. We join some noise in temporal and spatial sources, joining noise only increase the randomness, not affecting the distribution, the curve. In order to keep the distribution, not affecting the curve, we choose noise with the mean of 0
+
+## Q1 4
+```{r}
+Gamma_t = matrix(rnorm(240*6, sd= 0.25**0.5),240,6)
+Gamma_s = matrix(rnorm(441*6, sd= 0.015**0.5),6,441)
+```
+s gamma: extreme values are less likely
+
+```{r}
+cor(t(Gamma_s))
+
+plot(cor(t(Gamma_s)), xlab = "noises", ylab = "noises")
+```
+
+
+```{r}
+cor(Gamma_t)
+
+plot(cor(Gamma_t), xlab = "noises", ylab = "noises")
+```   
+
+The figure shows that the noises are independent, not well correlated between each noises. When we adding these Gaussian noise into TC and SM in Q1.5, we do not need to worry about the relevance between noises.
+
+Since we generate the data from Gaussian distribution, the distribution of data tends to be concentrated on mean 0
+
+```{r}
+# Criteria is 0.25
+hist(Gamma_t, prob = TRUE)
+curve(dnorm(x,mean = 0, sd = (1.96 * 0.25)**0.5), add = TRUE, yaxt = "n")
+```     
+```{r}
+# Criteria is 0.015
+hist(Gamma_s, prob = TRUE)
+curve(dnorm(x,mean = 0, sd = (1.96 * 0.015)**0.5), add = TRUE, yaxt = "n")
+```
+```{r}
+dim(Gamma_t %*% Gamma_s)
+dim(cor(Gamma_t %*% Gamma_s))
+```
+
+
+```{r}
+corr = cor(Gamma_t %*% Gamma_s)
+par(pin=c(6, 3))
+#ggcorrplot(corr, hc.order = TRUE)
+plot(corr,border = NA, xlab = "", ylab = "", main = "")
+```
+
+## Q1 5
+#### Adding noise Gamma_s, t
+```{r}
+TC = as.matrix(TC,6,240)
+
+X = (TC + Gamma_t) %*% (SM + Gamma_s)
+```
+
+
+#### TC* Gamma s and Gamma_t * SM both exist
+```{r}
+dim(TC)
+dim(Gamma_s)
+```
+```{r}
+dim(Gamma_t)
+dim(SM)
+```
+
+```{r}
+data <- data.frame(n = 1:240, X[,sample.int(240,100)])
+
+data_ggp <- melt(data, id.vars = "n")
+ggplot(data_ggp, aes(x=n, y=value,col = variable)) + geom_line()
+```
+
+
+441 points, variance of each point
+```{r}
+colvar = var(X)[1,]
+
+plot(colvar, xlab = "Points", ylab = "Variance")
+```
+
+#### Standardize
+```{r}
+X = scale(X)
+
+```
+
+
+## Q2
+
+## Q2 1
+
+```{r}
+
+D = TC
+
+A = SM
+
+A_LSR = solve(t(D) %*% D) %*% t(D) %*% X
+
+D_LSR = X %*% t(A_LSR)
+```
+dim(A_LSR)
+
+
+```{r}
+par(mfrow = c(3,4))
+
+for (i in 1:nsrcs) {
+  A_LSRi = A_LSR[i,]
+  D_LSRi = D_LSR[,i]
+  dim(A_LSRi) = c(x1,x2)
+  plot(A_LSRi, xlab = "", ylab = "")
+  plot(D_LSRi, type = "l", xlab = "", ylab = "")
+}
+
+```
+```{r}
+plot(D_LSR[,3],X[,30])
+plot(D_LSR[,4], X[,30])
+```
+
+
+
+## Q2 2
+```{r}
+lambda = 0.5
+
+I = matrix(0,6,6)
+diag(I) <- 1
+
+lambda_head = lambda * V
+
+A_RR = solve(t(D) %*% D + lambda_head * I) %*% t(D) %*% X
+
+D_RR = X %*% t(A_RR)
+```
+
+
+
+```{r}
+C_TLSR = 0
+C_TRR = 0
+
+for (i in 1:nsrcs) {
+  C_TLSR[i] = cor(TC[,i], D_LSR[,i])
+}
+
+for (i in 1:nsrcs) {
+  C_TRR[i] = cor(TC[,i], D_RR[,i])
+}
+
+```
+
+
+### C_TRR > C_TLSR
+```{r}
+sum(C_TRR)
+sum(C_TLSR)
+
+```
+
+```{r}
+lambda = 1000
+
+I = matrix(0,6,6)
+diag(I) <- 1
+
+lambda_head = lambda * V
+
+A_RR = solve(t(D) %*% D + lambda_head * I) %*% t(D) %*% X
+
+sourcesLSR = A_LSR[1,]
+sourcesRR = A_RR[1,]
+
+plot(sourcesLSR, xlab = "")
+plot(sourcesRR, xlab = "")
+```
+
+### Q2 3
+
+
+```{r}
+values_list = seq(from = 0, to = 1, length.out = 21)
+values_list
+```
+
+```{r}
+MSE_list = 0
+for (j in 1:21) {
+  mse_10 = 0
+  rho  = values_list[j]
+  step <- 1 / (norm(TC %*% t(TC)) * 1.1)
+  thr <- rho * N * step
+  Ao <- matrix(0,nsrcs,1)
+  A <- matrix(0,nsrcs,1)
+  A_LR <- matrix(0,nsrcs,x1*x2)
+
+  # repeat this process 10 times (10 realizations) each time with a new standardized X (new in terms of Gamma s and t). 
+  for (z in 1:10) {
+      Gamma_t = matrix(rnorm(240*6, sd= 0.25**0.5),240,6)
+      Gamma_s = matrix(rnorm(441*6, sd= 0.015**0.5),6,441)
+      X_ORI = (TC + Gamma_t) %*% (SM + Gamma_s)
+      X = scale(X_ORI)
+    
+      for(k in 1:(x1*x2)){
+        A <- Ao + step * (t(TC) %*% (X[,k] - (TC %*% Ao)))
+        A <- (1/(1 + thr)) * (sign(A) * pmax(replicate(nsrcs,0),abs(A) - thr))
+        
+        for(i in 1:10){
+          Ao <- A
+          A <- Ao + step * (t(TC) %*% (X[,k] - (TC %*% Ao)))
+          A <- (1/(1 + thr)) * (sign(A) * pmax(replicate(nsrcs,0),abs(A) - thr))
+        }
+        A_LR[,k] <- A
+      }
+      D_LR = X %*% t(A_LR)
+      mse_10 = mse_10 + norm((X - D_LR %*% A_LR), type = "F") ^ 2 / (N * V)
+  }
+  MSE_list[j] = mse_10 / 10
+}
+
+```
+
+
+```{r}
+min(MSE_list)
+which.min(MSE_list)
+values_list[which.min(MSE_list)]
+MSE_list
+```
+
+```{r}
+turning_point = values_list[14]
+turning_point
+values_list
+```
+
+
+```{r}
+plot(values_list, MSE_list, xlab = "p", ylab = "MSE")
+```
+
+### Q2 4
+
+```{r}
+# Forming A_LR and D_LR of our selected p, which is the turning point of the MSE
+
+rho = turning_point
+step = 1/(norm(TC %*% t (TC)) * 1.1)
+thr = rho *N* step
+Ao = matrix (0, nsrcs, 1)
+A = matrix (0, nsrcs, 1)
+A_LR = matrix (0, nsrcs, x1*x2)
+  
+for (k in 1:(x1*x2)){
+  A <- Ao + step * (t(TC) %*% (X[,k] - (TC %*% Ao)))
+  A <- (1/(1 + thr)) * (sign(A) * pmax(replicate(nsrcs,0),abs(A) - thr))
+  
+  for(i in 1:10){
+    Ao = A
+    A = Ao + step * (t(TC) %*% (X[,k] - (TC %*% Ao)))
+    A = (1/(1 + thr)) * (sign(A) * pmax(replicate(nsrcs,0),abs(A) - thr))
+  }
+  
+  A_LR[,k] = A
+}
+
+D_LR = X %*% t(A_LR)
+```
+
+```{r}
+
+C_TRR = 0
+C_SRR = 0
+C_TLR = 0
+C_SLR = 0
+
+for(i in 1:6){
+  C_TLR[i] = cor(TC[,i], D_LR[,i])
+  C_TRR[i] = cor(TC[,i], D_RR[,i])
+  C_SLR[i] = cor(t(SM)[,i], t(A_LR)[,i])
+  C_SRR[i] = cor(t(SM)[,i], t(A_RR)[,i])
+}
+
+# maximum absolute correlations
+sum(max(abs(C_TLR),axis = 0))
+sum(max(abs(C_TRR),axis = 0))
+sum(max(abs(C_SLR),axis = 0))
+sum(max(abs(C_SRR),axis = 0))
+```
+
+```{r}
+par(mfrow = c(6,4), pin = c(0.9,0.7))
+for (i in 1:6) {
+  A_RRi = A_RR[i,]
+  A_LRi = A_LR[i,]
+  dim(A_RRi) <- c(21,21)
+  dim(A_LRi) <- c(21,21)
+  plot(A_RRi, xlab = "", ylab = "", main = "ARR")
+  plot(D_RR[,i], type = "l", xlab = "", ylab = "", main = "DRR")
+  plot(A_LRi, type = "l", xlab = "", ylab = "", main = "ALR")
+  plot(D_LR[,i], type = "l", xlab = "", ylab = "", main = "DLR")
+}
+
+```
+
+## Q2 5
+#### dimensional reduction
+```{r}
+# Scale before doing PCR
+Z = scale(D)
+
+UVW = svd(Z,6)
+
+```
+The last Principle component is the smallest, since the PCR is choosing features from the most informative to less informative. 
+
+#### Draw eigen values
+```{r}
+eigen_values = UVW$v
+eigen_values
+plot(eigen_values, xlab = "", ylab = "")
+```
+
+```{r}
+
+Z = UVW$u
+par(mfrow = c(4,3), pin = c(1.3,1))
+
+plot(Z[,1], type = "l", xlab = "", ylab = "Z_1")
+plot(Z[,2], type = "l", xlab = "", ylab = "Z_2")
+plot(Z[,3], type = "l", xlab = "", ylab = "Z_3")
+
+plot(TC_1, type = "l", xlab = "")
+plot(TC_2, type = "l", xlab = "")
+plot(TC_3, type = "l", xlab = "")
+
+plot(Z[,4], type = "l", xlab = "", ylab = "Z_4")
+plot(Z[,5], type = "l", xlab = "", ylab = "Z_5")
+plot(Z[,6], type = "l", xlab = "", ylab = "Z_6")
+
+plot(TC_4, type = "l", xlab = "")
+plot(TC_5, type = "l", xlab = "")
+plot(TC_6, type = "l", xlab = "")
+
+```
+
+
+```{r}
+rho  = 0.001
+step <- 1 / (norm(TC %*% t(TC)) * 1.1)
+thr <- rho * N * step
+Ao <- matrix(0,nsrcs,1)
+A <- matrix(0,nsrcs,1)
+A_PCR <- matrix(0,nsrcs,x1*x2)
+
+for(k in 1:(x1*x2)){
+  A <- Ao + step * (t(TC) %*% (X[,k] - (TC %*% Ao)))
+  A <- (1/(1 + thr)) * (sign(A) * pmax(replicate(nsrcs,0),abs(A) - thr))
+  
+  for(i in 1:10){
+    Ao <- A
+    A <- Ao + step * (t(TC) %*% (X[,k] - (TC %*% Ao)))
+    A <- (1/(1 + thr)) * (sign(A) * pmax(replicate(nsrcs,0),abs(A) - thr))
+  }
+  
+  A_PCR[,k] <- A
+}
+
+D_PCR = X %*% t(A_PCR)
+
+```
+
+
+```{r}
+par(mfrow = c(2,3))
+
+for (i in 1:6) {
+  plot(D_PCR[i,], A_PCR[,i])
+}
+```
+
+
+
+
+
+
