@@ -1,4 +1,4 @@
-# 2021 s2 MAST30034 Assignment 1
+# 2021 S2 MAST30034 Assignment 1
 - Student Name: Fengwei Chen
 - Student ID: 1073940
 - Due Date: Friday 10th of September 11:59:00 pm (AEST).
